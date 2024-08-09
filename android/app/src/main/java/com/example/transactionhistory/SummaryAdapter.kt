@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
-class SummaryAdapter : ListAdapter<TransactionSummary, SummaryAdapter.ViewHolder>(SummaryDiffCallback()) {
+class SummaryAdapter : ListAdapter<Aggregate, SummaryAdapter.ViewHolder>(AggregateDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_summary, parent, false)
@@ -16,29 +16,28 @@ class SummaryAdapter : ListAdapter<TransactionSummary, SummaryAdapter.ViewHolder
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val summary = getItem(position)
-        holder.bind(summary)
+        holder.bind(getItem(position))
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val categoryTextView: TextView = itemView.findViewById(R.id.categoryTextView)
-        private val amountTextView: TextView = itemView.findViewById(R.id.amountTextView)
-        private val countTextView: TextView = itemView.findViewById(R.id.countTextView)
+        private val periodTextView: TextView = itemView.findViewById(R.id.periodTextView)
+        private val totalSmsTextView: TextView = itemView.findViewById(R.id.totalSmsTextView)
+        private val categoriesTextView: TextView = itemView.findViewById(R.id.categoriesTextView)
 
-        fun bind(summary: TransactionSummary) {
-            categoryTextView.text = summary.category
-            amountTextView.text = "Total: $${summary.totalAmount}"
-            countTextView.text = "Count: ${summary.transactionCount}"
+        fun bind(aggregate: Aggregate) {
+            periodTextView.text = "Period: ${aggregate.period}"
+            totalSmsTextView.text = "Total SMS: ${aggregate.totalSMS}"
+            categoriesTextView.text = "Categories: ${aggregate.categoryCounts}"
         }
     }
 }
 
-class SummaryDiffCallback : DiffUtil.ItemCallback<TransactionSummary>() {
-    override fun areItemsTheSame(oldItem: TransactionSummary, newItem: TransactionSummary): Boolean {
-        return oldItem.category == newItem.category
+class AggregateDiffCallback : DiffUtil.ItemCallback<Aggregate>() {
+    override fun areItemsTheSame(oldItem: Aggregate, newItem: Aggregate): Boolean {
+        return oldItem.period == newItem.period
     }
 
-    override fun areContentsTheSame(oldItem: TransactionSummary, newItem: TransactionSummary): Boolean {
+    override fun areContentsTheSame(oldItem: Aggregate, newItem: Aggregate): Boolean {
         return oldItem == newItem
     }
 }

@@ -11,15 +11,30 @@ data class SMSDataRequest(
     val smsData: List<SMS>,
     val lastTimestamp: Long
 )
-data class TransactionSummary(
-    val category: String,
-    val totalAmount: Double,
-    val transactionCount: Int,
-    val lastUpdated: String
+
+data class JobResponse(
+    val message: String,
+    val jobId: String
+)
+
+data class JobStatus(
+    val jobId: String,
+    val status: String,
+    val startTime: String,
+    val endTime: String?,
+    val error: String?
 )
 
 data class UserSummary(
-    val userId: String,
-    val summaries: List<TransactionSummary>,
-    val lastUpdated: String
+    val totalSMS: Int,
+    val lastUpdated: String,
+    val weeklyAggregates: List<Aggregate>?,
+    val monthlyAggregates: List<Aggregate>?,
+    val yearlyAggregates: List<Aggregate>?
+)
+
+data class Aggregate(
+    val period: String, // This could be a week, month, or year depending on the aggregate type
+    val totalSMS: Int,
+    val categoryCounts: Map<String, Int>
 )

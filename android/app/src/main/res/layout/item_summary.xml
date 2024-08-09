@@ -3,23 +3,22 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="8dp">
 
     <TextView
-        android:id="@+id/categoryTextView"
+        android:id="@+id/periodTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:textSize="18sp"/>
+        android:textStyle="bold"/>
 
     <TextView
-        android:id="@+id/amountTextView"
+        android:id="@+id/totalSmsTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"/>
 
     <TextView
-        android:id="@+id/countTextView"
+        android:id="@+id/categoriesTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"/>

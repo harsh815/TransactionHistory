@@ -10,7 +10,8 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.GlobalScope
+import androidx.lifecycle.lifecycleScope
+import com.example.transactionhistory.RetrofitClient.apiService
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -77,44 +78,27 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun syncSmsData() {
-        GlobalScope.launch {
+        lifecycleScope.launch {
             try {
-                val newSMS = smsReader.readNewSMS()
-                if (newSMS.isNotEmpty()) {
-                    val request = SMSDataRequest(getUserId(), newSMS, newSMS.last().timestamp)
-                    try {
-                        val response = RetrofitClient.apiService.sendSmsData(request)
-                        if (response.isSuccessful) {
-                            Log.d("SyncSMS", "Data synced successfully")
-                            runOnUiThread {
-                                Toast.makeText(this@MainActivity, "Data synced successfully", Toast.LENGTH_LONG).show()
-                            }
-                        } else {
-                            Log.e("SyncSMS", "Failed to sync data: ${response.errorBody()?.string()}")
-                            runOnUiThread {
-                                Toast.makeText(this@MainActivity, "Failed to sync data", Toast.LENGTH_LONG).show()
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("SyncSMS", "Error during network call: ${e.message}", e)
-                        runOnUiThread {
-                            Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                        }
+                val userId = getUserId()
+                val newSms = smsReader.readNewSMS()
+                val request = SMSDataRequest(userId, newSms, System.currentTimeMillis())
+                val response = apiService.sendSmsData(request)
+                if (response.isSuccessful) {
+                    val jobResponse = response.body()
+                    jobResponse?.let {
+                        Toast.makeText(this@MainActivity, "Job started with ID: ${it.jobId}", Toast.LENGTH_LONG).show()
+                        // You might want to store this jobId to check its status later
                     }
                 } else {
-                    Log.d("SyncSMS", "No new SMS to sync")
-                    runOnUiThread {
-                        Toast.makeText(this@MainActivity, "No new SMS to sync", Toast.LENGTH_LONG).show()
-                    }
+                    Toast.makeText(this@MainActivity, "Failed to sync SMS data", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Log.e("SyncSMS", "Error in syncSmsData: ${e.message}", e)
-                runOnUiThread {
-                    Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
-                }
+                Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
 
     private fun getUserId(): String {
         val sharedPrefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
