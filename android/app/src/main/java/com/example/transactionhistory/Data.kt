@@ -28,13 +28,11 @@ data class JobStatus(
 data class UserSummary(
     val totalSMS: Int,
     val lastUpdated: String,
-    val weeklyAggregates: List<Aggregate>?,
-    val monthlyAggregates: List<Aggregate>?,
-    val yearlyAggregates: List<Aggregate>?
+    val aggregate: Aggregate
 )
 
 data class Aggregate(
     val period: String, // This could be a week, month, or year depending on the aggregate type
     val totalSMS: Int,
-    val categoryCounts: Map<String, Int>
+    val categoryAmounts: Map<String, Double>  // Changed to Double to represent currency amounts
 )

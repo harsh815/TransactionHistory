@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 
-class SummaryAdapter : ListAdapter<Aggregate, SummaryAdapter.ViewHolder>(AggregateDiffCallback()) {
+class SummaryAdapter : ListAdapter<CategorySummary, SummaryAdapter.ViewHolder>(CategoryDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_summary, parent, false)
@@ -20,24 +20,24 @@ class SummaryAdapter : ListAdapter<Aggregate, SummaryAdapter.ViewHolder>(Aggrega
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val periodTextView: TextView = itemView.findViewById(R.id.periodTextView)
-        private val totalSmsTextView: TextView = itemView.findViewById(R.id.totalSmsTextView)
-        private val categoriesTextView: TextView = itemView.findViewById(R.id.categoriesTextView)
+        private val categoryTextView: TextView = itemView.findViewById(R.id.categoryTextView)
+        private val amountTextView: TextView = itemView.findViewById(R.id.amountTextView)
 
-        fun bind(aggregate: Aggregate) {
-            periodTextView.text = "Period: ${aggregate.period}"
-            totalSmsTextView.text = "Total SMS: ${aggregate.totalSMS}"
-            categoriesTextView.text = "Categories: ${aggregate.categoryCounts}"
+        fun bind(categorySummary: CategorySummary) {
+            categoryTextView.text = categorySummary.category
+            amountTextView.text = "Amount: $${String.format("%.2f", categorySummary.amount)}"
         }
     }
 }
+data class CategorySummary(val category: String, val amount: Double)
 
-class AggregateDiffCallback : DiffUtil.ItemCallback<Aggregate>() {
-    override fun areItemsTheSame(oldItem: Aggregate, newItem: Aggregate): Boolean {
-        return oldItem.period == newItem.period
+
+class CategoryDiffCallback : DiffUtil.ItemCallback<CategorySummary>() {
+    override fun areItemsTheSame(oldItem: CategorySummary, newItem: CategorySummary): Boolean {
+        return oldItem.category == newItem.category
     }
 
-    override fun areContentsTheSame(oldItem: Aggregate, newItem: Aggregate): Boolean {
+    override fun areContentsTheSame(oldItem: CategorySummary, newItem: CategorySummary): Boolean {
         return oldItem == newItem
     }
 }

@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.viewSummaryButton).setOnClickListener {
+            Log.d("Main activity","clicked button to get summary")
             launchSummaryActivity()
         }
     }
