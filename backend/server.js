@@ -1,143 +1,53 @@
 const express = require('express');
+const { spawn } = require('child_process');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const moment = require('moment');
 const dotenv = require('dotenv');
-const { spawn } = require('child_process');
-const Minio = require('minio');
 
 dotenv.config();
 
 const app = express();
 app.use(bodyParser.json());
 
-// MinIO client setup
-const minioClient = new Minio.Client({
-    endPoint: 'localhost',
-    port: 9000,
-    useSSL: false,
-    accessKey: process.env.MINIO_ACCESS_KEY,
-    secretKey: process.env.MINIO_SECRET_KEY
-});
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('Connected to MongoDB'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI).then(() => {
-  console.log('Connected to MongoDB');
-}).catch((err) => {
-  console.error('MongoDB connection error:', err);
-});
-
-// MongoDB Schemas
-const userAggregateSchema = new mongoose.Schema({
+const transactionAggregateSchema = new mongoose.Schema({
   userId: String,
-  totalSMS: Number,
-  lastUpdated: Date,
-  weeklyAggregates: [{
-    week: Date,
-    totalSMS: Number,
-    categoryCounts: Map
-  }],
-  monthlyAggregates: [{
-    month: Date,
-    totalSMS: Number,
-    categoryCounts: Map
-  }],
-  yearlyAggregates: [{
-    year: Number,
-    totalSMS: Number,
-    categoryCounts: Map
-  }]
+  date: Date,
+  category: String,
+  amount: Number
 });
 
-const UserAggregate = mongoose.model('UserAggregate', userAggregateSchema);
-
-const sparkJobSchema = new mongoose.Schema({
-  jobId: String,
+const jobSchema = new mongoose.Schema({
   userId: String,
   status: {
     type: String,
     enum: ['STARTED', 'COMPLETED', 'FAILED'],
     default: 'STARTED'
   },
-  error: String,
-  startTime: Date,
-  endTime: Date
+  startTime: { type: Date, default: Date.now },
+  endTime: Date,
+  error: String
 });
 
-const SparkJob = mongoose.model('SparkJob', sparkJobSchema);
-
-async function ensureBucketExists(bucketName) {
-  if (!bucketName) {
-    throw new Error("Bucket name is undefined. Check your .env file.");
-  }
-  try {
-    const exists = await minioClient.bucketExists(bucketName);
-    if (!exists) {
-      await minioClient.makeBucket(bucketName);
-      console.log(`Bucket '${bucketName}' created successfully.`);
-    } else {
-      console.log(`Bucket '${bucketName}' already exists.`);
-    }
-  } catch (err) {
-    console.error(`Error checking/creating bucket '${bucketName}':`, err);
-    throw err;
-  }
-}
-
-function startSparkJob(bucketName, objectName, userId, jobId) {
-  const sparkJobScript = 'process_sms_data.py';
-  const sparkSubmit = spawn('spark-submit', [
-    '--master', 'local[*]',
-    sparkJobScript,
-    bucketName,
-    objectName,
-    userId,
-    jobId
-  ]);
-
-  sparkSubmit.stdout.on('data', (data) => {
-    console.log(`Spark job output: ${data}`);
-  });
-
-  sparkSubmit.stderr.on('data', (data) => {
-    console.error(`Spark job error: ${data}`);
-  });
-
-  sparkSubmit.on('close', async (code) => {
-    console.log(`Spark job exited with code ${code}`);
-    
-    await SparkJob.findOneAndUpdate(
-      { jobId },
-      { 
-        status: code === 0 ? 'COMPLETED' : 'FAILED',
-        endTime: new Date(),
-        ...(code !== 0 && { error: `Job exited with code ${code}` })
-      }
-    );
-  });
-}
+const TransactionAggregate = mongoose.model('TransactionAggregate', transactionAggregateSchema);
+const Job = mongoose.model('Job', jobSchema);
 
 app.post('/api/sms', async (req, res) => {
   try {
     const { userId, smsData } = req.body;
     
-    const bucketName = process.env.MINIO_BUCKET_NAME;
-    const objectName = `raw-sms/${userId}/${Date.now()}.json`;
-    
-    await minioClient.putObject(bucketName, objectName, JSON.stringify(smsData));
-    
-    const jobId = new mongoose.Types.ObjectId().toString();
-    const newJob = new SparkJob({
-      jobId,
-      userId,
-      startTime: new Date()
-    });
-    await newJob.save();
+    const job = new Job({ userId });
+    await job.save();
 
-    startSparkJob(bucketName, objectName, userId, jobId);
-    
+    processSMSData(job._id, userId, smsData);
+
     res.status(202).json({ 
       message: 'Data received and processing initiated',
-      jobId: jobId
+      jobId: job._id 
     });
   } catch (error) {
     console.error('Error processing SMS data:', error);
@@ -148,14 +58,14 @@ app.post('/api/sms', async (req, res) => {
 app.get('/api/job/:jobId', async (req, res) => {
   try {
     const { jobId } = req.params;
-    const job = await SparkJob.findOne({ jobId });
+    const job = await Job.findById(jobId);
     
     if (!job) {
       return res.status(404).json({ error: 'Job not found' });
     }
     
     res.json({
-      jobId: job.jobId,
+      jobId: job._id,
       status: job.status,
       startTime: job.startTime,
       endTime: job.endTime,
@@ -170,47 +80,124 @@ app.get('/api/job/:jobId', async (req, res) => {
 app.get('/api/user/:userId/summary', async (req, res) => {
   try {
     const { userId } = req.params;
-    const { timeframe } = req.query; // 'weekly', 'monthly', or 'yearly'
+    const { timeframe } = req.query;
     
-    const userAggregate = await UserAggregate.findOne({ userId });
-    
-    if (!userAggregate) {
-      return res.status(404).json({ error: 'No data found for this user' });
-    }
+    const { startDate, endDate } = getDateRangeFromTimeframe(timeframe);
 
-    let summary;
-    switch(timeframe) {
-      case 'weekly':
-        summary = userAggregate.weeklyAggregates;
-        break;
-      case 'monthly':
-        summary = userAggregate.monthlyAggregates;
-        break;
-      case 'yearly':
-        summary = userAggregate.yearlyAggregates;
-        break;
-      default:
-        summary = {
-          totalSMS: userAggregate.totalSMS,
-          lastUpdated: userAggregate.lastUpdated
-        };
-    }
-    
-    res.json(summary);
+    const aggregates = await TransactionAggregate.aggregate([
+      {
+        $match: {
+          userId: userId,
+          date: { $gte: startDate, $lte: endDate }
+        }
+      },
+      {
+        $group: {
+          _id: '$category',
+          totalAmount: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalSMS = aggregates.reduce((sum, agg) => sum + agg.count, 0);
+    const categoryAmounts = Object.fromEntries(
+      aggregates.map(agg => [agg._id, agg.totalAmount])
+    );
+
+    res.json({
+      totalSMS,
+      lastUpdated: new Date().toISOString(),
+      aggregate: {
+        period: timeframe,
+        totalSMS,
+        categoryAmounts
+      }
+    });
   } catch (error) {
     console.error('Error retrieving summary:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-ensureBucketExists(process.env.MINIO_BUCKET_NAME)
-  .then(() => {
-    const port = process.env.PORT || 3000;
-    app.listen(port, () => {
-      console.log(`Server running on port ${port}`);
-    });
-  })
-  .catch(err => {
-    console.error('Failed to start server due to MinIO bucket error:', err);
-    process.exit(1);
+function getDateRangeFromTimeframe(timeframe) {
+  const endDate = moment().endOf('day');
+  let startDate;
+
+  switch (timeframe) {
+    case 'week':
+      startDate = moment().subtract(1, 'weeks').startOf('day');
+      break;
+    case 'month':
+      startDate = moment().subtract(1, 'months').startOf('day');
+      break;
+    case 'year':
+      startDate = moment().subtract(1, 'years').startOf('day');
+      break;
+    default:
+      throw new Error('Invalid timeframe');
+  }
+
+  return { startDate: startDate.toDate(), endDate: endDate.toDate() };
+}
+
+async function updateAggregates(userId, categorizedSMS) {
+  for (const sms of categorizedSMS) {
+    await TransactionAggregate.updateOne(
+      { 
+        userId: userId, 
+        date: new Date(sms.timestamp), 
+        category: sms.category 
+      },
+      { 
+        $inc: { amount: sms.amount } 
+      },
+      { upsert: true }
+    );
+  }
+}
+
+function processSMSData(jobId, userId, smsData) {
+  const sparkSubmit = spawn('spark-submit', ['spark_prediction.py']);
+  
+  sparkSubmit.stdin.write(JSON.stringify(smsData));
+  sparkSubmit.stdin.end();
+
+  let predictions = '';
+  sparkSubmit.stdout.on('data', (data) => {
+    predictions += data.toString();
   });
+
+  sparkSubmit.on('close', async (code) => {
+    try {
+      if (code !== 0) {
+        await Job.findByIdAndUpdate(jobId, { 
+          status: 'FAILED', 
+          endTime: new Date(),
+          error: `Spark job exited with code ${code}`
+        });
+        return;
+      }
+
+      const categorizedSMS = JSON.parse(predictions);
+      await updateAggregates(userId, categorizedSMS);
+
+      await Job.findByIdAndUpdate(jobId, { 
+        status: 'COMPLETED', 
+        endTime: new Date() 
+      });
+    } catch (error) {
+      console.error('Error processing SMS data:', error);
+      await Job.findByIdAndUpdate(jobId, { 
+        status: 'FAILED', 
+        endTime: new Date(),
+        error: error.message
+      });
+    }
+  });
+}
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
