@@ -1,12 +1,17 @@
+import logging
 from pyspark.sql import SparkSession
 from pyspark.ml import PipelineModel
-from pyspark.sql.functions import udf
-from pyspark.sql.types import FloatType
+from pyspark.sql.functions import udf, col
+from pyspark.sql.types import FloatType, StringType
 import re
-import json
-import sys
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 def extract_amount(content):
+    if content is None or not isinstance(content, str):
+        return 0.0
     amount_pattern = r'(?i)(?:rs\.?|inr)\s*(\d+(?:[.,]\d+)?)'
     match = re.search(amount_pattern, content)
     if match:
@@ -14,42 +19,69 @@ def extract_amount(content):
         return float(amount_str)
     return 0.0
 
-def predict_sms(sms_data):
-    spark = SparkSession.builder.appName("SMSPrediction").getOrCreate()
+def predict_category(cluster_number, cluster_to_category_map):
+    return cluster_to_category_map.get(cluster_number, "Unknown")
 
-    # Load the models
-    clustering_model = PipelineModel.load("sms_clustering_model")
-    classification_model = PipelineModel.load("sms_classification_model")
+def main():
+    spark = SparkSession.builder.appName("SMSCategorization").getOrCreate()
 
-    # Create DataFrame from input
-    df = spark.createDataFrame(sms_data, ["timestamp", "sender", "content"])
+    try:
+        # Load new SMS data
+        logger.info("Loading new SMS data")
+        new_sms_df = spark.read.csv("new_sms_data.csv", header=True, inferSchema=True)
 
-    # Extract amount
-    extract_amount_udf = udf(extract_amount, FloatType())
-    df = df.withColumn("extracted_amount", extract_amount_udf(df.content))
+        # Load clustering model
+        logger.info("Loading clustering model")
+        clustering_model = PipelineModel.load("sms_clustering_model")
 
-    # Apply clustering
-    clustered_df = clustering_model.transform(df)
+        # Load labeled clusters
+        logger.info("Loading labeled clusters")
+        labeled_clusters_df = spark.read.csv("labeled_clusters.csv", header=True, inferSchema=True)
 
-    # Apply classification
-    result_df = classification_model.transform(clustered_df)
+        # Create a map of cluster numbers to category labels
+        cluster_to_category = {row['cluster']: row['label'] for row in labeled_clusters_df.collect()}
 
-    # Select relevant columns
-    output_df = result_df.select("timestamp", "sender", "prediction", "extracted_amount")
+        # Register UDFs
+        extract_amount_udf = udf(extract_amount, FloatType())
+        predict_category_udf = udf(lambda x: predict_category(x, cluster_to_category), StringType())
 
-    # Collect results
-    results = output_df.collect()
+        # Preprocess new SMS data
+        logger.info("Preprocessing new SMS data")
+        processed_sms_df = new_sms_df.withColumn(
+            "extracted_amount", 
+            extract_amount_udf(col("content"))
+        )
 
-    spark.stop()
+        # Apply clustering model
+        logger.info("Applying clustering model")
+        clustered_sms_df = clustering_model.transform(processed_sms_df)
 
-    return [{"timestamp": row.timestamp, "sender": row.sender, "category": row.prediction, "amount": row.extracted_amount} for row in results]
+        # Predict category
+        logger.info("Predicting categories")
+        categorized_sms_df = clustered_sms_df.withColumn(
+            "predicted_category", 
+            predict_category_udf(col("prediction"))
+        )
+
+        # Select relevant columns
+        result_df = categorized_sms_df.select(
+            "timestamp", "sender", "content", "extracted_amount", "prediction", "predicted_category"
+        )
+
+        # Show results
+        logger.info("Categorization results:")
+        result_df.show(truncate=False)
+
+        # Optionally, save results
+        # result_df.write.csv("categorized_sms_results.csv", header=True)
+
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+
+    finally:
+        spark.stop()
 
 if __name__ == "__main__":
-    # Read JSON input from stdin
-    sms_data = json.load(sys.stdin)
-    
-    # Process and predict
-    categorized_sms = predict_sms(sms_data)
-    
-    # Output JSON result to stdout
-    json.dump(categorized_sms, sys.stdout)
+    main()

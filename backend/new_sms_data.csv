@@ -1,0 +1,49 @@
+timestamp,sender,content
+2023-03-15 09:23:45,HDFCBK,Your account XX4567 was debited INR 1299.50 on 2023-03-15 09:23:45 for UPI transaction.
+2023-05-22 14:17:33,ICICIBNK,Credit card XX7890 was charged Rs 789.00 at Flipkart on 2023-05-22 14:17:33.
+2023-07-01 18:45:12,SBIINB,INR 5000.00 credited to your account XX2345 by NEFT.
+2023-02-10 11:30:27,AXISBK,Your wallet was recharged with Rs 200.00 on 2023-02-10 11:30:27.
+2023-09-05 16:20:55,BOIBNK,Bill payment of Rs 1500.00 made from your account XX6789 to Electricity Board on 2023-09-05 16:20:55.
+2023-04-18 08:55:39,YESBNK,Your mobile recharge of Rs 399.00 for number +919876543210 is due on 2023-04-18 08:55:39.
+2023-06-30 21:10:42,HDFCBK,Reminder: EMI of Rs 10500.00 for loan XX3456 will be debited on 2023-07-01.
+2023-08-12 13:40:18,ICICIBNK,Your account XX9012 has a low balance. Please maintain minimum balance to avoid charges.
+2023-01-25 19:05:33,SBIINB,OTP for your transaction is 487291. Do not share this with anyone.
+2023-11-07 10:15:50,AXISBK,Your KYC is pending. Please visit the nearest branch to complete the process.
+2023-10-03 15:30:22,BOIBNK,Your account XX5678 was debited INR 850.75 on 2023-10-03 15:30:22 for UPI transaction.
+2023-12-19 07:45:11,YESBNK,Credit card XX2345 was charged Rs 1299.00 at Amazon on 2023-12-19 07:45:11.
+2024-01-05 12:20:39,HDFCBK,INR 7500.00 credited to your account XX7890 by NEFT.
+2023-03-28 17:55:44,ICICIBNK,Your wallet was recharged with Rs 500.00 on 2023-03-28 17:55:44.
+2023-05-14 22:10:07,SBIINB,Bill payment of Rs 2000.00 made from your account XX1234 to Water Department on 2023-05-14 22:10:07.
+2023-07-09 09:35:29,AXISBK,Your mobile recharge of Rs 599.00 for number +917890123456 is due on 2023-07-09 09:35:29.
+2023-09-22 14:50:53,BOIBNK,Reminder: EMI of Rs 15000.00 for loan XX6789 will be debited on 2023-09-23.
+2023-11-30 20:05:18,YESBNK,Your account XX3456 has a low balance. Please maintain minimum balance to avoid charges.
+2024-01-17 11:25:41,HDFCBK,OTP for your transaction is 653891. Do not share this with anyone.
+2023-02-28 16:40:06,ICICIBNK,Your KYC is pending. Please visit the nearest branch to complete the process.
+2023-04-11 21:55:30,SBIINB,Your account XX9012 was debited INR 3299.99 on 2023-04-11 21:55:30 for UPI transaction.
+2023-06-24 08:15:55,AXISBK,Credit card XX5678 was charged Rs 459.50 at Swiggy on 2023-06-24 08:15:55.
+2023-08-07 13:30:20,BOIBNK,INR 12000.00 credited to your account XX2345 by NEFT.
+2023-10-20 18:45:44,YESBNK,Your wallet was recharged with Rs 1000.00 on 2023-10-20 18:45:44.
+2023-12-03 23:59:59,HDFCBK,Bill payment of Rs 3500.00 made from your account XX7890 to Gas Company on 2023-12-03 23:59:59.
+2024-01-29 05:20:33,ICICIBNK,Your mobile recharge of Rs 749.00 for number +918901234567 is due on 2024-01-29 05:20:33.
+2023-03-13 10:35:58,SBIINB,Reminder: EMI of Rs 8000.00 for loan XX1234 will be debited on 2023-03-14.
+2023-05-26 15:50:22,AXISBK,Your account XX6789 has a low balance. Please maintain minimum balance to avoid charges.
+2023-08-08 21:05:47,BOIBNK,OTP for your transaction is 124578. Do not share this with anyone.
+2023-10-21 02:20:11,YESBNK,Your KYC is pending. Please visit the nearest branch to complete the process.
+2023-12-05 07:35:36,HDFCBK,Your account XX3456 was debited INR 5699.00 on 2023-12-05 07:35:36 for UPI transaction.
+2024-02-17 12:50:00,ICICIBNK,Credit card XX9012 was charged Rs 2199.50 at Zomato on 2024-02-17 12:50:00.
+2023-04-30 18:05:25,SBIINB,INR 20000.00 credited to your account XX5678 by NEFT.
+2023-07-13 23:20:49,AXISBK,Your wallet was recharged with Rs 2000.00 on 2023-07-13 23:20:49.
+2023-09-25 04:35:14,BOIBNK,Bill payment of Rs 1800.00 made from your account XX2345 to Internet Provider on 2023-09-25 04:35:14.
+2023-12-08 09:50:38,YESBNK,Your mobile recharge of Rs 999.00 for number +919012345678 is due on 2023-12-08 09:50:38.
+2024-02-20 15:05:03,HDFCBK,Reminder: EMI of Rs 12000.00 for loan XX7890 will be debited on 2024-02-21.
+2023-05-03 20:20:27,ICICIBNK,Your account XX1234 has a low balance. Please maintain minimum balance to avoid charges.
+2023-07-16 01:35:52,SBIINB,OTP for your transaction is 789012. Do not share this with anyone.
+2023-09-28 06:50:16,AXISBK,Your KYC is pending. Please visit the nearest branch to complete the process.
+2023-12-11 12:05:41,BOIBNK,Your account XX6789 was debited INR 4299.75 on 2023-12-11 12:05:41 for UPI transaction.
+2024-02-23 17:20:05,YESBNK,Credit card XX3456 was charged Rs 1599.00 at PayTM on 2024-02-23 17:20:05.
+2023-05-06 22:35:30,HDFCBK,INR 15000.00 credited to your account XX9012 by NEFT.
+2023-07-19 03:50:54,ICICIBNK,Your wallet was recharged with Rs 1500.00 on 2023-07-19 03:50:54.
+2023-10-01 09:05:19,SBIINB,Bill payment of Rs 2500.00 made from your account XX5678 to Mobile Operator on 2023-10-01 09:05:19.
+2023-12-14 14:20:43,AXISBK,Your mobile recharge of Rs 699.00 for number +917890123456 is due on 2023-12-14 14:20:43.
+2024-02-26 19:35:08,BOIBNK,Reminder: EMI of Rs 18000.00 for loan XX2345 will be debited on 2024-02-27.
+2023-05-09 00:50:32,YESBNK,Your account XX7890 has a low balance. Please maintain minimum balance to avoid charges.
